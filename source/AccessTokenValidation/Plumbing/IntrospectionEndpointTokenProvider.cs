@@ -92,10 +92,10 @@ namespace IdentityServer3.AccessTokenValidation
                     Token = context.Token
                 };
 
-                if (!string.IsNullOrEmpty(this._options.ClientId))
+                if (!string.IsNullOrEmpty(this._options.ApiName))
                 {
-                    request.ClientId = this._options.ClientId;
-                    request.ClientSecret = this._options.ClientSecret;
+                    request.ClientId = this._options.ApiName;
+                    request.ClientSecret = this._options.ApiSecret;
                 }
 
                 response = await this.httpClient.IntrospectTokenAsync(request)

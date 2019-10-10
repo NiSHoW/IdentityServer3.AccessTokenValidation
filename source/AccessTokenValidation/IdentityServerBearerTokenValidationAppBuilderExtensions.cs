@@ -108,7 +108,7 @@ namespace Owin
 
         private static Lazy<OAuthBearerAuthenticationOptions> ConfigureEndpointValidation(IdentityServerBearerTokenAuthenticationOptions options, ILoggerFactory loggerFactory)
         {
-            return new Lazy<OAuthBearerAuthenticationOptions>(() => 
+            return new Lazy<OAuthBearerAuthenticationOptions>(() =>
             {
                 if (options.EnableValidationResultCache)
                 {
@@ -125,7 +125,7 @@ namespace Owin
                     Provider = new ContextTokenProvider(options.TokenProvider),
                 };
 
-                if (!string.IsNullOrEmpty(options.ClientId) || options.IntrospectionHttpHandler != null)
+                if (!string.IsNullOrEmpty(options.ApiName) || options.IntrospectionHttpHandler != null)
                 {
                     bearerOptions.AccessTokenProvider = new IntrospectionEndpointTokenProvider(options, loggerFactory);
                 }
@@ -141,7 +141,7 @@ namespace Owin
 
         internal static Lazy<OAuthBearerAuthenticationOptions> ConfigureLocalValidation(IdentityServerBearerTokenAuthenticationOptions options, ILoggerFactory loggerFactory)
         {
-            return new Lazy<OAuthBearerAuthenticationOptions>(() => 
+            return new Lazy<OAuthBearerAuthenticationOptions>(() =>
             {
                 JwtFormat tokenFormat = null;
 
@@ -149,13 +149,31 @@ namespace Owin
                 if (!string.IsNullOrWhiteSpace(options.IssuerName) &&
                     options.SigningCertificate != null)
                 {
-                    var audience = options.IssuerName.EnsureTrailingSlash();
-                    audience += "resources";
+
+                    string audience = null;
+                    bool validateAudience = true;
+
+                    // if API name is set, do a strict audience check for
+                    //https://github.com/IdentityServer/IdentityServer4.AccessTokenValidation/blob/677bf6863a27c851270436faf9dfac437f46d90d/src/IdentityServerAuthenticationOptions.cs#L192
+                    if (!string.IsNullOrWhiteSpace(options.ApiName) && !options.LegacyAudienceValidation)
+                    {
+                        audience = options.ApiName;
+                    }
+                    else if (options.LegacyAudienceValidation)
+                    {
+                        audience = options.IssuerName.EnsureTrailingSlash() + "resources";
+                    }
+                    else
+                    {
+                        // no audience validation, rely on scope checks only
+                        validateAudience = false;
+                    }
 
                     var valParams = new TokenValidationParameters
                     {
                         ValidIssuer = options.IssuerName,
                         ValidAudience = audience,
+                        ValidateAudience = validateAudience,
                         IssuerSigningKey = new X509SecurityKey(options.SigningCertificate),
                         NameClaimType = options.NameClaimType,
                         RoleClaimType = options.RoleClaimType,
@@ -179,9 +197,23 @@ namespace Owin
                         options,
                         loggerFactory);
 
+
+                    string audience = issuerProvider.Audience;
+                    bool validateAudience = true;
+
+                    // if API name is set, do a strict audience check for
+                    //https://github.com/IdentityServer/IdentityServer4.AccessTokenValidation/blob/677bf6863a27c851270436faf9dfac437f46d90d/src/IdentityServerAuthenticationOptions.cs#L192
+                    if (string.IsNullOrWhiteSpace(audience) && !options.LegacyAudienceValidation)
+                    {                    
+                        // no audience validation, rely on scope checks only
+                        validateAudience = false;
+                    }
+
+
                     var valParams = new TokenValidationParameters
                     {
-                        ValidAudience = issuerProvider.Audience,
+                        ValidAudience = audience,
+                        ValidateAudience = validateAudience,
                         NameClaimType = options.NameClaimType,
                         RoleClaimType = options.RoleClaimType
                     };

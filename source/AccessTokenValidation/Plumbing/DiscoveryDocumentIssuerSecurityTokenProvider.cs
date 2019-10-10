@@ -31,7 +31,9 @@ namespace IdentityServer3.AccessTokenValidation
         private readonly ReaderWriterLockSlim _synclock = new ReaderWriterLockSlim();
         private readonly IConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
         private readonly ILogger _logger;
+        private readonly IdentityServerBearerTokenAuthenticationOptions _options;
         private string _issuer;
+        private string _audience;
         private IEnumerable<Microsoft.IdentityModel.Tokens.SecurityKey> _keys;
         private DateTimeOffset _syncAfter = new DateTimeOffset(new DateTime(2001, 1, 1));
         private readonly TimeSpan _automaticRefreshInterval;
@@ -39,6 +41,7 @@ namespace IdentityServer3.AccessTokenValidation
         public DiscoveryDocumentIssuerSecurityTokenProvider(string discoveryEndpoint, IdentityServerBearerTokenAuthenticationOptions options, ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.Create(this.GetType().FullName);
+            _options = options;
 
             var handler = options.BackchannelHttpHandler ?? new WebRequestHandler();
 
@@ -101,8 +104,7 @@ namespace IdentityServer3.AccessTokenValidation
                 _synclock.EnterReadLock();
                 try
                 {
-                    var issuer = _issuer.EnsureTrailingSlash();
-                    return issuer + "resources";
+                    return _audience;
                 }
                 finally
                 {
@@ -169,6 +171,20 @@ namespace IdentityServer3.AccessTokenValidation
 
                 _issuer = result.Issuer;
                 _keys = keys;
+
+                if (!string.IsNullOrWhiteSpace(_options.ApiName) && !_options.LegacyAudienceValidation)
+                {
+                    _audience = _options.ApiName;
+                }
+                else if (_options.LegacyAudienceValidation)
+                {
+                    _audience = _issuer.EnsureTrailingSlash() + "resources";
+                } 
+                else
+                {
+                    _audience = null;
+                }
+
                 _syncAfter = DateTimeOffset.UtcNow + _automaticRefreshInterval;
             }
             catch (Exception ex)

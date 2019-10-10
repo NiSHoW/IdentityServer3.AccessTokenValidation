@@ -14,8 +14,8 @@ namespace AccessTokenValidation.Tests.Integration_Tests
         {
             Authority = "https://server/with/introspection",
             ValidationMode = ValidationMode.ValidationEndpoint,
-            ClientId = "client",
-            ClientSecret = "secret"
+            ApiName = "client",
+            ApiSecret = "secret"
         };
 
         [Fact]

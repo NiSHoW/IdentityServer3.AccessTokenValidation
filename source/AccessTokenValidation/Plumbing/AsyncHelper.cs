@@ -23,7 +23,8 @@ namespace IdentityServer3.AccessTokenValidation
     {
         public static TResult RunSync<TResult>(Func<Task<TResult>> func)
         {
-            return Task.Run(async () => await func().ConfigureAwait(false)).Result;
+            return Task.Run(async () => await func().ConfigureAwait(false))
+                .GetAwaiter().GetResult();
         }
 
         public static void RunSync(Func<Task> func)

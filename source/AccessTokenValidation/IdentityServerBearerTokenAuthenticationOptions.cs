@@ -48,6 +48,12 @@ namespace IdentityServer3.AccessTokenValidation
         }
 
         /// <summary>
+        /// Enable if this API is being secured by IdentityServer3, and if you need to support both JWTs and reference tokens.
+        /// If you enable this, you should add scope validation for incoming JWTs.
+        /// </summary>
+        public bool LegacyAudienceValidation { get; set; } = false;
+
+        /// <summary>
         /// Gets or sets the base address of identity server (required)
         /// </summary>
         /// <value>
@@ -62,6 +68,24 @@ namespace IdentityServer3.AccessTokenValidation
         /// The name of the issuer.
         /// </value>
         public string IssuerName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the issuer (if you don't want to use the discovery document).
+        /// </summary>
+        /// <value>
+        /// The name of the issuer.
+        /// </value>
+        public string AudienceName { get; set; }
+
+        /// <summary>
+        /// Name of the API resource used for authentication against introspection endpoint
+        /// </summary>
+        public string ApiName { get; set; }
+
+        /// <summary>
+        /// Secret used for authentication against introspection endpoint
+        /// </summary>
+        public string ApiSecret { get; set; }
 
         /// <summary>
         /// Gets or sets the signing certificate (if you don't want to use the discovery document).
@@ -174,7 +198,12 @@ namespace IdentityServer3.AccessTokenValidation
         /// <value>
         /// The client id.
         /// </value>
-        public string ClientId { get; set; }
+        [Obsolete("Use ApiName Instead")]
+        public string ClientId
+        {
+            get => ApiName;
+            set => ApiName = value;
+        }
 
         /// <summary>
         /// Gets or sets the client secret for accessing the introspection endpoint.
@@ -183,7 +212,12 @@ namespace IdentityServer3.AccessTokenValidation
         /// <value>
         /// The client secret.
         /// </value>
-        public string ClientSecret { get; set; }
+        [Obsolete("Use ApiSecret Instead")]
+        public string ClientSecret 
+        { 
+            get => ApiSecret; 
+            set => ApiSecret = value; 
+        }
 
         /// <summary>
         /// Gets or sets the HTTP handler for accessing the introspection endoint.
